@@ -189,10 +189,10 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Trigger email send immediately via our session
                 try:
                     await self.hass.async_add_executor_job(
-                        self._login_session.start_email_verification
+                        self._login_session.start_sms_verification
                     )
                 except Exception as e:
-                    _LOGGER.warning("start_email_verification failed: %s", e)
+                    _LOGGER.warning("start_sms_verification failed: %s", e)
                 return await self.async_step_approval()
             except XiaomiInvalidCredentials:
                 errors["base"] = "invalid_auth"
@@ -249,13 +249,13 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """
-        Step B3: Xiaomi identity verification via email OTP.
-        User enters code from email HERE — we submit it via our session.
+        Step B3: Xiaomi identity verification via SMS OTP.
+        User enters code from SMS HERE — we submit it via our session.
         """
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            otp = (user_input.get("email_code") or "").strip()
+            otp = (user_input.get("sms_code") or "").strip()
             try:
                 result: LoginResult = await self.hass.async_add_executor_job(
                     self._login_session.verify_with_code, otp
@@ -275,7 +275,7 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="approval",
             data_schema=vol.Schema({
-                vol.Required("email_code"): str,
+                vol.Required("sms_code"): str,
             }),
             errors=errors,
             description_placeholders={"notification_url": self._notification_url},
@@ -341,10 +341,10 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._notification_url = exc.notification_url
                     try:
                         await self.hass.async_add_executor_job(
-                            ls.start_email_verification
+                            ls.start_sms_verification
                         )
                     except Exception as e:
-                        _LOGGER.warning("start_email_verification (reauth): %s", e)
+                        _LOGGER.warning("start_sms_verification (reauth): %s", e)
                     return await self.async_step_reauth_approval()
 
                 except XiaomiCaptchaRequired as exc:
@@ -395,10 +395,10 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._notification_url = exc.notification_url
                     try:
                         await self.hass.async_add_executor_job(
-                            self._login_session.start_email_verification
+                            self._login_session.start_sms_verification
                         )
                     except Exception as e:
-                        _LOGGER.warning("start_email_verification (reauth): %s", e)
+                        _LOGGER.warning("start_sms_verification (reauth): %s", e)
                     return await self.async_step_reauth_approval()
                 except XiaomiInvalidCredentials:
                     errors["base"] = "invalid_auth"
@@ -459,7 +459,7 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
         """Re-auth email OTP step — mirrors async_step_approval."""
         errors: dict[str, str] = {}
         if user_input is not None:
-            otp = (user_input.get("email_code") or "").strip()
+            otp = (user_input.get("sms_code") or "").strip()
             try:
                 result: LoginResult = await self.hass.async_add_executor_job(
                     self._login_session.verify_with_code, otp
@@ -477,7 +477,7 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_approval",
-            data_schema=vol.Schema({vol.Required("email_code"): str}),
+            data_schema=vol.Schema({vol.Required("sms_code"): str}),
             errors=errors,
             description_placeholders={"notification_url": self._notification_url},
         )
