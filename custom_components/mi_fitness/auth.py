@@ -472,14 +472,17 @@ class XiaomiLoginSession:
                         r.status_code, r.text[:300])
         try:
             jr = r.json()
-            code = jr.get("code", -1)
-            if code not in (0,) and jr.get("result") != "ok":
-                desc = jr.get("desc") or jr.get("message") or ""
-                raise XiaomiLoginError(
-                    f"Failed to send SMS code (code={code}): {desc}"
-                )
-        except ValueError:
-            pass
+        except ValueError as exc:
+            # Non-JSON reply (error page / proxy failure) — no SMS was sent
+            raise XiaomiLoginError(
+                f"sendPhoneTicket returned non-JSON response (HTTP {r.status_code})"
+            ) from exc
+        code = jr.get("code", -1)
+        if code not in (0,) and jr.get("result") != "ok":
+            desc = jr.get("desc") or jr.get("message") or ""
+            raise XiaomiLoginError(
+                f"Failed to send SMS code (code={code}): {desc}"
+            )
 
     def verify_with_code(self, otp_code: str) -> "LoginResult":
         """
