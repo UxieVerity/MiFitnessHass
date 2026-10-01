@@ -130,13 +130,15 @@ class MiFitnessClient:
         self.region        = region
         self.phone_id      = phone_id
 
-        self._base = f"https://{region}.hlth.io.mi.com"
+        # cn region: cn.hlth.io.mi.com does not resolve; the bare host serves CN data
+        self._api_host = "hlth.io.mi.com" if region == "cn" else f"{region}.hlth.io.mi.com"
+        self._base = f"https://{self._api_host}"
         self._session = self._make_session()
 
     def update_service_token(self, new_token: str) -> None:
         """Hot-swap serviceToken without rebuilding the full client."""
         self.service_token = new_token
-        domain = f"{self.region}.hlth.io.mi.com"
+        domain = self._api_host
         self._session.cookies.set("serviceToken", new_token, domain=domain)
 
     def _make_session(self) -> requests.Session:
@@ -146,7 +148,7 @@ class MiFitnessClient:
             "HandleParams": "true",
             "region_tag":   self.region,
         })
-        domain = f"{self.region}.hlth.io.mi.com"
+        domain = self._api_host
         s.cookies.set("userId",       self.user_id,       domain=domain)
         s.cookies.set("cUserId",      self.c_user_id,     domain=domain)
         s.cookies.set("serviceToken", self.service_token, domain=domain)
