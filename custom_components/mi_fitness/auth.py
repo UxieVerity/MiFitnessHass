@@ -42,7 +42,7 @@ class XiaomiLoginError(Exception):
     """Base login error."""
 
 class XiaomiInvalidCredentials(XiaomiLoginError):
-    """Wrong username or password."""
+    """Wrong username/password, or invalid/expired verification code (OTP)."""
 
 class XiaomiCaptchaRequired(XiaomiLoginError):
     """Captcha challenge. Attributes: captcha_url (str), captcha_sign (str)."""
