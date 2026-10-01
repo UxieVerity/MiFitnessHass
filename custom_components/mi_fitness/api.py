@@ -2,6 +2,8 @@
 Mi Fitness cloud API client.
 
 Endpoint: GET https://{region}.hlth.io.mi.com/app/v1/data/get_fitness_data_by_watermark
+          (cn region serves the same API from the bare host hlth.io.mi.com,
+          see _api_host below)
 Auth:     RC4 + SHA1 MAC signing scheme
 """
 
