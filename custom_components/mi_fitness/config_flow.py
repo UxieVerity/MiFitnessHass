@@ -186,14 +186,21 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_captcha()
             except XiaomiApprovalRequired as exc:
                 self._notification_url = exc.notification_url
-                # Trigger email send immediately via our session
+                # Trigger SMS send immediately via our session
                 try:
                     await self.hass.async_add_executor_job(
                         self._login_session.start_sms_verification
                     )
                 except Exception as e:
+                    # SMS not sent — don't show the OTP form, surface the error
                     _LOGGER.warning("start_sms_verification failed: %s", e)
-                return await self.async_step_approval()
+                    errors["base"] = (
+                        "sms_send_failed"
+                        if isinstance(e, XiaomiLoginError)
+                        else "unknown"
+                    )
+                else:
+                    return await self.async_step_approval()
             except XiaomiInvalidCredentials:
                 errors["base"] = "invalid_auth"
             except XiaomiLoginError as exc:
@@ -337,14 +344,17 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                     return await self._update_entry_tokens(result, username, password)
 
                 except XiaomiApprovalRequired as exc:
-                    # 2FA email required — go straight to code entry, skip credentials form
+                    # 2FA required — go straight to code entry, skip credentials form
                     self._notification_url = exc.notification_url
                     try:
                         await self.hass.async_add_executor_job(
                             ls.start_sms_verification
                         )
                     except Exception as e:
+                        # SMS not sent — fall back to the credentials form
+                        # instead of showing an OTP screen that cannot succeed
                         _LOGGER.warning("start_sms_verification (reauth): %s", e)
+                        return await self.async_step_reauth_confirm()
                     return await self.async_step_reauth_approval()
 
                 except XiaomiCaptchaRequired as exc:
@@ -398,8 +408,15 @@ class MiFitnessConfigFlow(ConfigFlow, domain=DOMAIN):
                             self._login_session.start_sms_verification
                         )
                     except Exception as e:
+                        # SMS not sent — don't show the OTP form, surface the error
                         _LOGGER.warning("start_sms_verification (reauth): %s", e)
-                    return await self.async_step_reauth_approval()
+                        errors["base"] = (
+                            "sms_send_failed"
+                            if isinstance(e, XiaomiLoginError)
+                            else "unknown"
+                        )
+                    else:
+                        return await self.async_step_reauth_approval()
                 except XiaomiInvalidCredentials:
                     errors["base"] = "invalid_auth"
                 except XiaomiLoginError:

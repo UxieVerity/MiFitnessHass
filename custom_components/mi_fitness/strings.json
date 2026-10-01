@@ -71,7 +71,8 @@
       "login_failed": "Login failed. Check your credentials and try again.",
       "captcha_invalid": "Wrong captcha. Try again.",
       "unknown": "Unexpected error \u2014 check Home Assistant logs.",
-      "approval_not_detected": "Wrong or expired code. Check your email and try again."
+      "approval_not_detected": "Wrong or expired code. Try again.",
+      "sms_send_failed": "Could not send the SMS code (rate limit or network error). Wait a minute and try again."
     },
     "abort": {
       "already_configured": "This Mi Fitness account is already configured.",
